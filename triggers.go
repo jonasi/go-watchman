@@ -1,5 +1,10 @@
 package watchman
 
+import (
+	"fmt"
+	"time"
+)
+
 type ExpressionScope struct{ string }
 type CaseSensitivity struct{ bool }
 
@@ -44,9 +49,18 @@ type Expression interface {
 	noopExpr()
 }
 
-type exprSl []Expression
+type exprSlice []Expression
 
-func (sl exprSl) noopExpr() {}
+func (sl exprSlice) noopExpr() {}
+
+func fromStringSlice(strs []string) exprSlice {
+	sl := make(exprSlice, len(strs))
+	for i := range strs {
+		sl[i] = exprString(strs[i])
+	}
+
+	return sl
+}
 
 type exprString string
 
@@ -61,15 +75,15 @@ func caseName(name string, cs CaseSensitivity) exprString {
 }
 
 func AllOf(expr ...Expression) Expression {
-	return append(exprSl{exprString("allof")}, expr...)
+	return append(exprSlice{exprString("allof")}, expr...)
 }
 
 func AnyOf(expr ...Expression) Expression {
-	return append(exprSl{exprString("anyof")}, expr...)
+	return append(exprSlice{exprString("anyof")}, expr...)
 }
 
 func Not(expr Expression) Expression {
-	return exprSl{exprString("not"), expr}
+	return exprSlice{exprString("not"), expr}
 }
 
 func True() Expression {
@@ -81,33 +95,54 @@ func False() Expression {
 }
 
 func Suffix(suffix string) Expression {
-	return exprSl{exprString("suffix"), exprString(suffix)}
+	return exprSlice{exprString("suffix"), exprString(suffix)}
 }
 
-func Match(pattern string, cs CaseSensitivity, scope ExpressionScope) Expression {
-	return exprSl{caseName("match", cs), exprString(pattern), exprString(scope.string)}
+func Match(cs CaseSensitivity, scope ExpressionScope, pattern string) Expression {
+	return exprSlice{caseName("match", cs), exprString(pattern), exprString(scope.string)}
 }
 
-func Pcre(pattern string, cs CaseSensitivity, scope ExpressionScope) Expression {
-	return exprSl{caseName("pcre", cs), exprString(pattern), exprString("basename")}
+func Pcre(cs CaseSensitivity, scope ExpressionScope, pattern string) Expression {
+	return exprSlice{caseName("pcre", cs), exprString(pattern), exprString("basename")}
 }
 
-func Name(scope ExpressionScope, cs CaseSensitivity, names ...string) Expression {
-	return nil
+func Name(cs CaseSensitivity, scope ExpressionScope, names ...string) Expression {
+	return exprSlice{caseName("name", cs), fromStringSlice(names), exprString("basename")}
 }
 
-func Type() {
+const (
+	TypeBlockSpecialFile     = "b"
+	TypeCharacterSpecialFile = "c"
+	TypeDirectory            = "d"
+	TypeRegularFile          = "f"
+	TypeNamedPipe            = "p"
+	TypeSymbolicLink         = "l"
+	TypeSocket               = "s"
+	TypeSolarisDoor          = "D"
+)
 
+func Type(typ string) Expression {
+	return exprSlice{exprString("type"), exprString(typ)}
 }
 
-func Empty() {
-
+func Empty() Expression {
+	return exprSlice{exprString("empty")}
 }
 
-func Exists() {
-
+func Exists() Expression {
+	return exprSlice{exprString("exists")}
 }
 
-func Since() {
+func SinceClock(clock string) Expression {
+	return exprSlice{exprString("since"), exprString(clock), exprString("oclock")}
+}
 
+const (
+	TimeFieldModified = "mtime"
+	TimeFieldCreated  = "ctime"
+)
+
+func SinceTime(t time.Time, tf string) Expression {
+	val := fmt.Sprintf("%d", t.Unix())
+	return exprSlice{exprString("since"), exprString(val), exprString(tf)}
 }

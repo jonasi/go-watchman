@@ -33,7 +33,7 @@ func socketLoc() (string, error) {
 type req struct {
 	ptr    interface{}
 	respCh chan error
-	cmd    []string
+	cmd    []interface{}
 }
 
 func NewClient() *Client {
@@ -114,7 +114,7 @@ func (c *Client) Close() error {
 	return <-ch
 }
 
-func (c *Client) send(ptr interface{}, args ...string) error {
+func (c *Client) send(ptr interface{}, args ...interface{}) error {
 	req := req{
 		ptr:    ptr,
 		respCh: make(chan error),

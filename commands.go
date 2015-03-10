@@ -1,5 +1,22 @@
 package watchman
 
+type File struct {
+	Dev    int
+	Gid    int
+	Name   string
+	Exists bool
+	Size   int
+	Mode   int
+	Uid    int
+	Mtime  int
+	Ctime  int
+	Ino    int
+	Nlink  int
+	Oclock string
+	New    bool
+	Cclock string
+}
+
 type base struct {
 	Version string
 	Err     string `json:"error"`
@@ -20,6 +37,44 @@ func (c *Client) Clock(dir string) (string, error) {
 	}
 
 	return s.Clock, nil
+}
+
+func (c *Client) Find(dir string, patterns ...string) ([]File, string, error) {
+	var s struct {
+		base
+		Clock string
+		Files []File
+	}
+
+	params := []interface{}{"find", dir}
+	for _, p := range patterns {
+		params = append(params, p)
+	}
+
+	if err := c.send(&s, params...); err != nil {
+		return nil, "", err
+	}
+
+	return s.Files, s.Clock, nil
+}
+
+func (c *Client) Since(dir string, clock string, patterns ...string) ([]File, string, error) {
+	var s struct {
+		base
+		Clock string
+		Files []File
+	}
+
+	params := []interface{}{"since", clock, dir}
+	for _, p := range patterns {
+		params = append(params, p)
+	}
+
+	if err := c.send(&s, params...); err != nil {
+		return nil, "", err
+	}
+
+	return s.Files, s.Clock, nil
 }
 
 func (c *Client) GetConfig(dir string) (Config, error) {
