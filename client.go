@@ -1,9 +1,34 @@
-package main
+package watchman
 
 import (
 	"encoding/json"
 	"net"
+	"os"
+	"os/exec"
 )
+
+func socketLoc() (string, error) {
+	if addr := os.Getenv("WATCHMAN_SOCK"); addr != "" {
+		return addr, nil
+	}
+
+	var loc struct {
+		Version  string
+		Sockname string
+	}
+
+	b, err := exec.Command("watchman", "get-sockname").Output()
+
+	if err != nil {
+		return "", err
+	}
+
+	if err := json.Unmarshal(b, &loc); err != nil {
+		return "", err
+	}
+
+	return loc.Sockname, nil
+}
 
 type req struct {
 	ptr    interface{}

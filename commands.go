@@ -1,4 +1,4 @@
-package main
+package watchman
 
 type base struct {
 	Version string
