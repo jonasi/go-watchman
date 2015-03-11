@@ -47,6 +47,36 @@ func (c *Client) Clock(dir string) (string, error) {
 	return s.Clock, nil
 }
 
+type Path struct {
+	Path  string
+	Depth int
+}
+
+type QueryConfig struct {
+	Suffix               []string   `json:"suffix,omitempty"`
+	Since                string     `json:"since,omitempty"`
+	Expression           Expression `json:"expression,omitempty"`
+	Fields               []string   `json:"fields,omitempty"`
+	Path                 []Path     `jsonL"path,omitempty"`
+	SyncTimeout          int        `json:"sync_timeout,omitempty"`
+	EmptyOnFreshInstance bool       `json:"empty_on_fresh_instance,omitempty"`
+}
+
+func (c *Client) Query(dir string, conf QueryConfig) ([]File, string, error) {
+	var s struct {
+		base
+		Clock           string
+		Files           []File
+		IsFreshInstance bool `json:"is_fresh_instance"`
+	}
+
+	if err := c.send(&s, "query", dir, conf); err != nil {
+		return nil, "", err
+	}
+
+	return s.Files, s.Clock, nil
+}
+
 func (c *Client) Find(dir string, patterns ...string) ([]File, string, error) {
 	var s struct {
 		base

@@ -20,3 +20,12 @@ func TestFind(t *testing.T) {
 
 	fmt.Println(c.Find(wd, "*.go"))
 }
+
+func TestQuery(t *testing.T) {
+	c := mustGetConnectedClient(t)
+	wd, _ := os.Getwd()
+
+	fmt.Println(c.Query(wd, QueryConfig{
+		Suffix: []string{"go"},
+	}))
+}
