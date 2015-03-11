@@ -1,20 +1,28 @@
 package watchman
 
 type File struct {
-	Dev    int
-	Gid    int
-	Name   string
-	Exists bool
-	Size   int
-	Mode   int
-	Uid    int
-	Mtime  int
-	Ctime  int
-	Ino    int
-	Nlink  int
-	Oclock string
-	New    bool
-	Cclock string
+	Name    string
+	Exists  bool
+	Cclock  string
+	Oclock  string
+	Mtime   int64
+	MtimeMs int64
+	MtimeUs int64
+	MtimeNs int64
+	MtimeF  float64
+	Ctime   int64
+	CtimeMs int64
+	CtimeUs int64
+	CtimeNs int64
+	CtimeF  float64
+	Size    int
+	Mode    int
+	Uid     int
+	Gid     int
+	Ino     int
+	Dev     int
+	Nlink   int
+	New     bool
 }
 
 type base struct {
