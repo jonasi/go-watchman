@@ -11,7 +11,7 @@ func assert(t *testing.T, test bool, fmt string, args ...interface{}) {
 }
 
 func mustGetConnectedClient(t *testing.T) *Client {
-	c := NewClient()
+	c := NewClient(nil)
 	err := c.Connect()
 
 	assert(t, err == nil, "connect error %s", err)
@@ -20,12 +20,12 @@ func mustGetConnectedClient(t *testing.T) *Client {
 }
 
 func TestNewClient(t *testing.T) {
-	c := NewClient()
+	c := NewClient(nil)
 	assert(t, c != nil, "nil client")
 }
 
 func TestClientConnect(t *testing.T) {
-	c := NewClient()
+	c := NewClient(nil)
 	err := c.Connect()
 
 	assert(t, err == nil, "connect error %s", err)
