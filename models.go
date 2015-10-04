@@ -53,6 +53,7 @@ type QueryConfig struct {
 	Path                 []Path     `json:"path,omitempty"`
 	SyncTimeout          int        `json:"sync_timeout,omitempty"`
 	EmptyOnFreshInstance bool       `json:"empty_on_fresh_instance,omitempty"`
+	RelativeRoot         string     `json:"relative_root,omitempty"`
 }
 
 type SubscriptionEvent struct {

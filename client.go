@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"sync/atomic"
 )
 
 func socketLoc() (string, error) {
@@ -39,15 +40,13 @@ type req struct {
 }
 
 func NewClient(logHandler func(string)) *Client {
-	cl := &Client{
+	return &Client{
 		conn:        nil,
 		reqCh:       make(chan *req),
 		closeCh:     make(chan chan error),
 		logHandler:  logHandler,
 		subHandlers: map[string]func(*SubscriptionEvent){},
 	}
-
-	return cl
 }
 
 type Client struct {
@@ -85,15 +84,20 @@ func (c *Client) listen() {
 		enc    = json.NewEncoder(logWriter("request", c.conn))
 		dec    = json.NewDecoder(logReader("response", c.conn))
 		respCh = make(chan json.RawMessage)
+		closed int32
 	)
 
 	go func() {
-		var ev struct {
-			Log          *string `json:"log"`
-			Subscription *string `json:"subscription"`
-		}
-
 		for {
+			var ev struct {
+				Log          *string `json:"log"`
+				Subscription *string `json:"subscription"`
+			}
+
+			if atomic.LoadInt32(&closed) != 0 {
+				return
+			}
+
 			var m json.RawMessage
 
 			if err := dec.Decode(&m); err != nil {
@@ -159,6 +163,7 @@ OUTER:
 
 			curReq = req
 		case closeCh := <-c.closeCh:
+			atomic.StoreInt32(&closed, 1)
 			closeCh <- c.conn.Close()
 			break OUTER
 		}

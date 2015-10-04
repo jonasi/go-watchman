@@ -78,7 +78,7 @@ func (c *Client) ListCapabilities() ([]string, error) {
 		Capabilities []string `json:"capabilities"`
 	}
 
-	if err := c.send(&s, "capabilities"); err != nil {
+	if err := c.send(&s, "list-capabilities"); err != nil {
 		return nil, err
 	}
 

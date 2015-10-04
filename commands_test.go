@@ -2,14 +2,31 @@ package watchman
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 )
 
-var wd string
+var (
+	wd       string
+	numFiles int
+)
 
 func init() {
 	wd, _ = os.Getwd()
+
+	files, err := ioutil.ReadDir(wd)
+
+	if err != nil {
+		panic(err)
+	}
+
+	for _, f := range files {
+		if strings.HasSuffix(f.Name(), ".go") {
+			numFiles++
+		}
+	}
 }
 
 func TestWatch(t *testing.T) {
@@ -61,8 +78,8 @@ func TestLogLevel(t *testing.T) {
 
 	assert(t, err == nil, "unexpected config err: %s", err)
 
-	ok, _ := c.Log("error", "HELLO")
-	fmt.Printf("ok = %+v\n", ok)
+	err = c.LogLevel("off")
+	assert(t, err == nil, "unexpected config err: %s", err)
 }
 
 func TestVersion(t *testing.T) {
@@ -75,9 +92,11 @@ func TestVersion(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	c := mustGetConnectedClient(t)
-	wd, _ := os.Getwd()
 
-	fmt.Println(c.Find(wd, "*.go"))
+	files, _, err := c.Find(wd, "*.go")
+
+	assert(t, err == nil, "find err: %s", err)
+	assert(t, len(files) == numFiles, "expected %d files, found %d", numFiles, len(files))
 }
 
 func TestQuery(t *testing.T) {
@@ -87,4 +106,13 @@ func TestQuery(t *testing.T) {
 	fmt.Println(c.Query(wd, QueryConfig{
 		Suffix: []string{"go"},
 	}))
+}
+
+func TestListCapabilities(t *testing.T) {
+	c := mustGetConnectedClient(t)
+
+	caps, err := c.ListCapabilities()
+
+	assert(t, err == nil, "list capablities err: %s", err)
+	fmt.Printf("caps = %+v\n", caps)
 }

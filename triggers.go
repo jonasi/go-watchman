@@ -74,40 +74,74 @@ func caseName(name string, cs CaseSensitivity) exprString {
 	return exprString("i" + name)
 }
 
+// https://facebook.github.io/watchman/docs/expr/allof.html
 func AllOf(expr ...Expression) Expression {
 	return append(exprSlice{exprString("allof")}, expr...)
 }
 
+// https://facebook.github.io/watchman/docs/expr/anyof.html
 func AnyOf(expr ...Expression) Expression {
 	return append(exprSlice{exprString("anyof")}, expr...)
 }
 
-func Not(expr Expression) Expression {
-	return exprSlice{exprString("not"), expr}
+// https://facebook.github.io/watchman/docs/expr/dirname.html
+func Dirname(cs CaseSensitivity, dir string) Expression {
+	return nil
 }
 
-func True() Expression {
-	return exprString("true")
+// https://facebook.github.io/watchman/docs/expr/empty.html
+func Empty() Expression {
+	return exprSlice{exprString("empty")}
 }
 
-func False() Expression {
-	return exprString("false")
+// https://facebook.github.io/watchman/docs/expr/exists.html
+func Exists() Expression {
+	return exprSlice{exprString("exists")}
 }
 
-func Suffix(suffix string) Expression {
-	return exprSlice{exprString("suffix"), exprString(suffix)}
-}
-
+// https://facebook.github.io/watchman/docs/expr/match.html
 func Match(cs CaseSensitivity, scope ExpressionScope, pattern string) Expression {
 	return exprSlice{caseName("match", cs), exprString(pattern), exprString(scope.string)}
 }
 
+// https://facebook.github.io/watchman/docs/expr/name.html
+func Name(cs CaseSensitivity, scope ExpressionScope, names ...string) Expression {
+	return exprSlice{caseName("name", cs), fromStringSlice(names), exprString("basename")}
+}
+
+// https://facebook.github.io/watchman/docs/expr/not.html
+func Not(expr Expression) Expression {
+	return exprSlice{exprString("not"), expr}
+}
+
+// https://facebook.github.io/watchman/docs/expr/pcre.html
 func Pcre(cs CaseSensitivity, scope ExpressionScope, pattern string) Expression {
 	return exprSlice{caseName("pcre", cs), exprString(pattern), exprString("basename")}
 }
 
-func Name(cs CaseSensitivity, scope ExpressionScope, names ...string) Expression {
-	return exprSlice{caseName("name", cs), fromStringSlice(names), exprString("basename")}
+// https://facebook.github.io/watchman/docs/expr/since.html
+func SinceClock(clock string) Expression {
+	return exprSlice{exprString("since"), exprString(clock), exprString("oclock")}
+}
+
+const (
+	TimeFieldModified = "mtime"
+	TimeFieldCreated  = "ctime"
+)
+
+func SinceTime(t time.Time, tf string) Expression {
+	val := fmt.Sprintf("%d", t.Unix())
+	return exprSlice{exprString("since"), exprString(val), exprString(tf)}
+}
+
+// https://facebook.github.io/watchman/docs/expr/size.html
+func Size() Expression {
+	return nil
+}
+
+// https://facebook.github.io/watchman/docs/expr/suffix.html
+func Suffix(suffix string) Expression {
+	return exprSlice{exprString("suffix"), exprString(suffix)}
 }
 
 const (
@@ -121,28 +155,7 @@ const (
 	TypeSolarisDoor          = "D"
 )
 
+// https://facebook.github.io/watchman/docs/expr/type.html
 func Type(typ string) Expression {
 	return exprSlice{exprString("type"), exprString(typ)}
-}
-
-func Empty() Expression {
-	return exprSlice{exprString("empty")}
-}
-
-func Exists() Expression {
-	return exprSlice{exprString("exists")}
-}
-
-func SinceClock(clock string) Expression {
-	return exprSlice{exprString("since"), exprString(clock), exprString("oclock")}
-}
-
-const (
-	TimeFieldModified = "mtime"
-	TimeFieldCreated  = "ctime"
-)
-
-func SinceTime(t time.Time, tf string) Expression {
-	val := fmt.Sprintf("%d", t.Unix())
-	return exprSlice{exprString("since"), exprString(val), exprString(tf)}
 }
