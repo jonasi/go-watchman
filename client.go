@@ -4,6 +4,7 @@ package kovacs
 
 import (
 	"encoding/json"
+	"errors"
 	"net"
 	"os"
 	"os/exec"
@@ -37,6 +38,32 @@ type req struct {
 	dest   interface{}
 	respCh chan error
 	cmd    []interface{}
+}
+
+// a mix of base fields (version, error) and other fields
+// that indicate that is either an event or an error has occurred
+type rawResp struct {
+	Version      string  `json:"version"`      // base field
+	Error        *string `json:"error"`        // an error response
+	Warning      *string `json:"warning"`      // a supplemental warning (not handled right now)
+	Log          *string `json:"log"`          // log event
+	Subscription *string `json:"subscription"` // subscription event
+}
+
+type resp struct {
+	rawResp
+	Raw json.RawMessage `json:"-"` // store the raw json
+}
+
+func (r *resp) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, &r.rawResp); err != nil {
+		return err
+	}
+
+	r.Raw = make(json.RawMessage, len(b))
+	copy(r.Raw, b)
+
+	return nil
 }
 
 // NewClient returns a new Client.  Connect must be called before any other
@@ -90,51 +117,25 @@ func (c *Client) listen() {
 	var (
 		enc    = json.NewEncoder(logWriter("request", c.conn))
 		dec    = json.NewDecoder(logReader("response", c.conn))
-		respCh = make(chan json.RawMessage)
+		respCh = make(chan *resp)
 		closed int32
 	)
 
+	// read json values off the socket and send back to main
+	// select loop
 	go func() {
 		for {
-			var ev struct {
-				Log          *string `json:"log"`
-				Subscription *string `json:"subscription"`
-			}
-
 			if atomic.LoadInt32(&closed) != 0 {
 				return
 			}
 
-			var m json.RawMessage
+			var r resp
 
-			if err := dec.Decode(&m); err != nil {
+			if err := dec.Decode(&r); err != nil {
 				panic("JSON decoding error " + err.Error())
 			}
 
-			if err := json.Unmarshal(m, &ev); err != nil {
-				panic("JSON decoding error " + err.Error())
-			}
-
-			if ev.Log != nil {
-				if c.logHandler != nil {
-					c.logHandler(*ev.Log)
-				}
-
-				continue
-			}
-
-			if ev.Subscription != nil {
-				var ev SubscriptionEvent
-
-				if err := json.Unmarshal(m, &ev); err != nil {
-					panic("JSON decoding error " + err.Error())
-				}
-
-				c.subHandlers[ev.Subscription](&ev)
-				continue
-			}
-
-			respCh <- m
+			respCh <- &r
 		}
 	}()
 
@@ -144,21 +145,42 @@ OUTER:
 	for {
 		select {
 		case resp := <-respCh:
+			if resp.Log != nil {
+				if c.logHandler != nil {
+					c.logHandler(*resp.Log)
+				}
+
+				continue
+			}
+
+			if resp.Subscription != nil {
+				var ev SubscriptionEvent
+
+				if err := json.Unmarshal(resp.Raw, &ev); err != nil {
+					panic("JSON decoding error " + err.Error())
+				}
+
+				c.subHandlers[ev.Subscription](&ev)
+				continue
+			}
+
 			if curReq == nil {
-				panic("Got a response without a request: " + string(resp))
+				panic("Got a response without a request: " + string(resp.Raw))
 			}
 
 			req := curReq
 			curReq = nil
 
-			if err := json.Unmarshal(resp, req.dest); err != nil {
-				req.respCh <- err
+			if resp.Error != nil {
+				req.respCh <- errors.New(*resp.Error)
 				continue
 			}
 
-			if err, ok := req.dest.(error); ok && err.Error() != "" {
-				req.respCh <- err
-				continue
+			if req.dest != nil {
+				if err := json.Unmarshal(resp.Raw, req.dest); err != nil {
+					req.respCh <- err
+					continue
+				}
 			}
 
 			req.respCh <- nil

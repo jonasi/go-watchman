@@ -1,18 +1,8 @@
 package kovacs
 
-type baseResponse struct {
-	Version string
-	Err     string `json:"error"`
-}
-
-func (b *baseResponse) Error() string {
-	return b.Err
-}
-
 // https://facebook.github.io/watchman/docs/cmd/clock.html
 func (c *Client) Clock(dir string) (string, error) {
 	var s struct {
-		baseResponse
 		Clock string
 	}
 
@@ -26,7 +16,6 @@ func (c *Client) Clock(dir string) (string, error) {
 // https://facebook.github.io/watchman/docs/cmd/find.html
 func (c *Client) Find(dir string, patterns ...string) ([]File, string, error) {
 	var s struct {
-		baseResponse
 		Clock string
 		Files []File
 	}
@@ -46,7 +35,6 @@ func (c *Client) Find(dir string, patterns ...string) ([]File, string, error) {
 // https://facebook.github.io/watchman/docs/cmd/get-config.html
 func (c *Client) GetConfig(dir string) (*Config, error) {
 	var s struct {
-		baseResponse
 		Config Config
 	}
 
@@ -60,7 +48,6 @@ func (c *Client) GetConfig(dir string) (*Config, error) {
 // https://facebook.github.io/watchman/docs/cmd/get-sockname.html
 func (c *Client) GetSockname() (string, error) {
 	var s struct {
-		baseResponse
 		Sockname string
 	}
 
@@ -74,7 +61,6 @@ func (c *Client) GetSockname() (string, error) {
 // https://facebook.github.io/watchman/docs/cmd/list-capabilities.html
 func (c *Client) ListCapabilities() ([]string, error) {
 	var s struct {
-		baseResponse
 		Capabilities []string `json:"capabilities"`
 	}
 
@@ -88,7 +74,6 @@ func (c *Client) ListCapabilities() ([]string, error) {
 // https://facebook.github.io/watchman/docs/cmd/log.html
 func (c *Client) Log(level, msg string) (bool, error) {
 	var s struct {
-		baseResponse
 		Logged bool
 	}
 
@@ -101,21 +86,12 @@ func (c *Client) Log(level, msg string) (bool, error) {
 
 // https://facebook.github.io/watchman/docs/cmd/log-level.html
 func (c *Client) LogLevel(level string) error {
-	var s struct {
-		baseResponse
-	}
-
-	if err := c.send(&s, "log-level", level); err != nil {
-		return err
-	}
-
-	return nil
+	return c.send(nil, "log-level", level)
 }
 
 // https://facebook.github.io/watchman/docs/cmd/query.html
 func (c *Client) Query(dir string, conf QueryConfig) ([]File, string, error) {
 	var s struct {
-		baseResponse
 		Clock           string
 		Files           []File
 		IsFreshInstance bool `json:"is_fresh_instance"`
@@ -131,7 +107,6 @@ func (c *Client) Query(dir string, conf QueryConfig) ([]File, string, error) {
 // https://facebook.github.io/watchman/docs/cmd/shutdown-server.html
 func (c *Client) ShutdownServer() (bool, error) {
 	var v struct {
-		baseResponse
 		ShutdownServer bool `json:"shutdown-server"`
 	}
 
@@ -145,7 +120,6 @@ func (c *Client) ShutdownServer() (bool, error) {
 // https://facebook.github.io/watchman/docs/cmd/since.html
 func (c *Client) Since(dir string, clock string, patterns ...string) ([]File, string, error) {
 	var s struct {
-		baseResponse
 		Clock string
 		Files []File
 	}
@@ -163,18 +137,18 @@ func (c *Client) Since(dir string, clock string, patterns ...string) ([]File, st
 }
 
 // https://facebook.github.io/watchman/docs/cmd/subscribe.html
-func (c *Client) Subscribe() {
-
+func (c *Client) Subscribe(root, name string, expr Expression, fields []string, deferVCS bool) error {
+	return c.send(nil, "subscribe", root, name)
 }
 
 // https://facebook.github.io/watchman/docs/cmd/trigger.html
-func (c *Client) Trigger() {
-
+func (c *Client) Trigger(root, name string, expr Expression, cmd []string) error {
+	return nil
 }
 
 // https://facebook.github.io/watchman/docs/cmd/trigger-del.html
-func (c *Client) TriggerDel() {
-
+func (c *Client) TriggerDel(root, name string) error {
+	return c.send(nil, "trigger-del", root, name)
 }
 
 // https://facebook.github.io/watchman/docs/cmd/trigger-list.html
@@ -183,13 +157,15 @@ func (c *Client) TriggerList() {
 }
 
 // https://facebook.github.io/watchman/docs/cmd/unsubscribe.html
-func (c *Client) Unsubscribe() {
-
+func (c *Client) Unsubscribe(root, name string) error {
+	return c.send(nil, "unsubscribe", root, name)
 }
 
 // https://facebook.github.io/watchman/docs/cmd/version.html
 func (c *Client) Version() (string, error) {
-	var v baseResponse
+	var v struct {
+		Version string
+	}
 
 	if err := c.send(&v, "version"); err != nil {
 		return "", err
@@ -201,7 +177,6 @@ func (c *Client) Version() (string, error) {
 // https://facebook.github.io/watchman/docs/cmd/watch.html
 func (c *Client) Watch(dir string) error {
 	var v struct {
-		baseResponse
 		Watch string
 	}
 
@@ -215,25 +190,20 @@ func (c *Client) Watch(dir string) error {
 // https://facebook.github.io/watchman/docs/cmd/watch-del.html
 func (c *Client) WatchDel(dir string) error {
 	var v struct {
-		baseResponse
 		Watch string
 	}
 
-	if err := c.send(&v, "watch-del", dir); err != nil {
-		return err
-	}
-
-	return nil
+	return c.send(&v, "watch-del", dir)
 }
 
 // https://facebook.github.io/watchman/docs/cmd/watch-del-all.html
-func (c *Client) WatchDelAll() {
+func (c *Client) WatchDelAll() error {
+	return c.send(nil, "watch-del-all")
 }
 
 // https://facebook.github.io/watchman/docs/cmd/watch-list.html
 func (c *Client) WatchList() ([]string, error) {
 	var v struct {
-		baseResponse
 		Roots []string
 	}
 
@@ -245,6 +215,11 @@ func (c *Client) WatchList() ([]string, error) {
 }
 
 // https://facebook.github.io/watchman/docs/cmd/watch-project.html
-func (c *Client) WatchProject() {
+func (c *Client) WatchProject(dir string) error {
+	var v struct {
+		Watch        string `json:"watch"`
+		RelativePath string `json:"relative_path"`
+	}
 
+	return c.send(&v, "watch-project", dir)
 }
