@@ -39,6 +39,9 @@ type req struct {
 	cmd    []interface{}
 }
 
+// NewClient returns a new Client.  Connect must be called before any other
+// client methods are used.  An optional logHandler may be passed in to
+// handle an watchman generated log messages.
 func NewClient(logHandler func(string)) *Client {
 	return &Client{
 		conn:        nil,
@@ -49,6 +52,8 @@ func NewClient(logHandler func(string)) *Client {
 	}
 }
 
+// A Client manages a single socket connection to the watchman server. Connect
+// must be called before any other method is used.
 type Client struct {
 	conn        *net.UnixConn
 	reqCh       chan *req
@@ -57,6 +62,8 @@ type Client struct {
 	subHandlers map[string]func(*SubscriptionEvent)
 }
 
+// Connect initializes the connection the watchman server.  It assumes that
+// watchman server is running locally and attempts a unix socket connection
 func (c *Client) Connect() error {
 	logf("locating watchman socket")
 	addr, err := socketLoc()
@@ -170,6 +177,7 @@ OUTER:
 	}
 }
 
+// Close shuts down the connection to the server
 func (c *Client) Close() error {
 	ch := make(chan error)
 	c.closeCh <- ch
