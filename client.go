@@ -91,12 +91,19 @@ type Client struct {
 
 // Connect initializes the connection the watchman server.  It assumes that
 // watchman server is running locally and attempts a unix socket connection
-func (c *Client) Connect() error {
-	logf("locating watchman socket")
-	addr, err := socketLoc()
+// addr is the path to the watchman server socket location. If an empty string
+// is provided, Client will attempty to infer the location from the env var
+// WATCHMAN_SOCK and, if that fails, by shelling out a `watchman get-sockname` call
+func (c *Client) Connect(addr string) error {
+	if addr == "" {
+		logf("locating watchman socket")
 
-	if err != nil {
-		return err
+		var err error
+		addr, err = socketLoc()
+
+		if err != nil {
+			return err
+		}
 	}
 
 	logf("connecting to %s", addr)

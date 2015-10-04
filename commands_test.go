@@ -2,44 +2,26 @@ package kovacs
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"strings"
 	"testing"
 )
 
-var (
-	wd       string
-	numFiles int
-)
-
-func init() {
-	wd, _ = os.Getwd()
-
-	files, err := ioutil.ReadDir(wd)
-
-	if err != nil {
-		panic(err)
-	}
-
-	for _, f := range files {
-		if strings.HasSuffix(f.Name(), ".go") {
-			numFiles++
-		}
-	}
+func TestClock(t *testing.T) {
+	c := mustGetConnectedClient(t)
+	c.Clock(testDir)
 }
 
 func TestWatch(t *testing.T) {
 	c := mustGetConnectedClient(t)
 
-	err := c.Watch(wd)
+	err := c.Watch(testDir)
 	assert(t, err == nil, "unexpected watch error: %s", err)
 }
 
 func TestGetConfig(t *testing.T) {
 	c := mustGetConnectedClient(t)
 
-	conf, err := c.GetConfig(wd)
+	conf, err := c.GetConfig(testDir)
 
 	assert(t, err == nil, "unexpected config err: %s", err)
 	assert(t, conf != nil, "unexpected nil config")
@@ -93,7 +75,7 @@ func TestVersion(t *testing.T) {
 func TestFind(t *testing.T) {
 	c := mustGetConnectedClient(t)
 
-	files, _, err := c.Find(wd, "*.go")
+	files, _, err := c.Find(testDir, "*.go")
 
 	assert(t, err == nil, "find err: %s", err)
 	assert(t, len(files) == numFiles, "expected %d files, found %d", numFiles, len(files))

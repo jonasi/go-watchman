@@ -1,1 +1,5 @@
 *.swp
+
+test/state
+test/sock
+test/log

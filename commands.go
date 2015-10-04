@@ -1,12 +1,13 @@
 package kovacs
 
-// https://facebook.github.io/watchman/docs/cmd/clock.html
-func (c *Client) Clock(dir string) (string, error) {
+// Clock returns the watchman server clock time at the specified root
+// for more info, see https://facebook.github.io/watchman/docs/cmd/clock.html
+func (c *Client) Clock(root string) (string, error) {
 	var s struct {
 		Clock string
 	}
 
-	if err := c.send(&s, "clock", dir); err != nil {
+	if err := c.send(&s, "clock", root); err != nil {
 		return "", err
 	}
 
