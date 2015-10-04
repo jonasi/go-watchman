@@ -103,7 +103,7 @@ func TestQuery(t *testing.T) {
 	c := mustGetConnectedClient(t)
 	wd, _ := os.Getwd()
 
-	fmt.Println(c.Query(wd, QueryConfig{
+	fmt.Println(c.Query(wd, QueryOptions{
 		Suffix: []string{"go"},
 	}))
 }

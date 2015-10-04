@@ -90,7 +90,7 @@ func (c *Client) LogLevel(level string) error {
 }
 
 // https://facebook.github.io/watchman/docs/cmd/query.html
-func (c *Client) Query(dir string, conf QueryConfig) ([]File, string, error) {
+func (c *Client) Query(dir string, conf QueryOptions) ([]File, string, error) {
 	var s struct {
 		Clock           string
 		Files           []File
@@ -137,13 +137,13 @@ func (c *Client) Since(dir string, clock string, patterns ...string) ([]File, st
 }
 
 // https://facebook.github.io/watchman/docs/cmd/subscribe.html
-func (c *Client) Subscribe(root, name string, expr Expression, fields []string, deferVCS bool) error {
-	return c.send(nil, "subscribe", root, name)
+func (c *Client) Subscribe(root, name string, opts *SubscriptionOptions) error {
+	return c.send(nil, "subscribe", root, name, opts)
 }
 
 // https://facebook.github.io/watchman/docs/cmd/trigger.html
-func (c *Client) Trigger(root, name string, expr Expression, cmd []string) error {
-	return nil
+func (c *Client) Trigger(root string, opts *TriggerOptions) error {
+	return c.send(nil, "trigger", root, opts)
 }
 
 // https://facebook.github.io/watchman/docs/cmd/trigger-del.html
@@ -152,8 +152,16 @@ func (c *Client) TriggerDel(root, name string) error {
 }
 
 // https://facebook.github.io/watchman/docs/cmd/trigger-list.html
-func (c *Client) TriggerList() {
+func (c *Client) TriggerList(root string) ([]string, error) {
+	var v struct {
+		Triggers []string
+	}
 
+	if err := c.send(&v, "trigger-list", root); err != nil {
+		return nil, err
+	}
+
+	return v.Triggers, nil
 }
 
 // https://facebook.github.io/watchman/docs/cmd/unsubscribe.html

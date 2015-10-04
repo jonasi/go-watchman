@@ -16,35 +16,6 @@ var (
 	CaseInsensitive = CaseSensitivity{false}
 )
 
-var (
-	StdinDevNull     StdinType = stdinString("/dev/null")
-	StdinNamePerLine StdinType = stdinString("NAME_PER_LINE")
-)
-
-type StdinType interface {
-	stdinNoop()
-}
-
-type stdinString string
-
-func (s stdinString) stdinNoop() {}
-
-type StdinArray []string
-
-func (s StdinArray) stdinNoop() {}
-
-type Trigger struct {
-	Name          string      `json:"name"`
-	Command       []string    `json:"command"`
-	AppendFiles   bool        `json:"append_files,omitempty"`
-	Expression    interface{} `json:"expression"`
-	Stdin         StdinType   `json:"stdin"`
-	Stdout        string      `json:"stdout"`
-	Stderr        string      `json:"stderr"`
-	MaxFilesStdin int         `json:"max_files_stdin"`
-	Chdir         string      `json:"chdir"`
-}
-
 type Expression interface {
 	noopExpr()
 }
