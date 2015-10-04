@@ -1,4 +1,4 @@
-package watchman
+package kovacs
 
 type Config struct {
 	Settle               int

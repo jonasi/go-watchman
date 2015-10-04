@@ -1,4 +1,4 @@
-package watchman
+package kovacs
 
 func stringParams(strs ...string) []interface{} {
 	p := make([]interface{}, len(strs))

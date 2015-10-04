@@ -1,6 +1,6 @@
 // https://facebook.github.io/watchman/docs/socket-interface.html
 
-package watchman
+package kovacs
 
 import (
 	"encoding/json"
